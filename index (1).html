@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>40代50代のキャリアチャンネル - 人事担当者様向けご案内</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: 人事担当者の課題解決を主軸に置いた、対話型のダッシュボード形式のSPAを設計。ユーザー（人事担当者）が自らの課題意識に沿って情報を探索できるよう、①トップ（価値提案）、②人事の課題（対話型カード）、③私達の解決策（インタラクティブなプロセス図）、④実績データ（動的グラフ）、⑤導入のご案内（ステップ図）、⑥お問合せ、の6つのセクションで構成。この構造は、一方的な情報提供ではなく、ユーザーの能動的な関与を促し、製品の価値を深く理解させるために選択した。 -->
+    <!-- Visualization & Content Choices: 
+    - 人事の課題 -> Goal:Inform -> Interactive Cards(HTML/CSS/JS) -> クリックで課題と解決策を表示。ユーザーの問題意識に直接訴求するため。
+    - 私達の解決策 -> Goal:Organize -> Interactive Process Flow(HTML/CSS/JS) -> クリックで各フェーズの詳細情報を表示。サービスの全体像と提供価値を構造的に理解するため。
+    - 実績データ -> Goal:Compare/Inform -> Donut & Bar Charts(Chart.js) -> 実証実験のデータを視覚化。数値のインパクトを最大化し、信頼性を高めるため。
+    - すべての要素は、人事担当者が直面するであろうペインポイントを起点に、貴社サイトがいかにしてその解決策となるかを直感的に示すよう配置・設計されている。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; scroll-behavior: smooth; }
+        .bg-warm-white { background-color: #F8F7F4; }
+        .bg-warm-beige { background-color: #EAE7E1; }
+        .text-warm-gray { color: #5D5C61; }
+        .text-supportive-blue { color: #5A7D9D; } /* 変更 */
+        .bg-supportive-blue { background-color: #5A7D9D; } /* 変更 */
+        .border-supportive-blue { border-color: #5A7D9D; } /* 変更 */
+        .nav-link { transition: color 0.3s, border-bottom-color 0.3s; }
+        .nav-link:hover, .nav-link.active { color: #5A7D9D; border-bottom-color: #5A7D9D; } /* 変更 */
+        .challenge-card { transition: transform 0.3s, box-shadow 0.3s; }
+        .challenge-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .process-step { transition: background-color 0.3s, color 0.3s; cursor: pointer; }
+        .process-step.active, .process-step:hover { background-color: #5A7D9D; color: white; } /* 変更 */
+        .fade-in { animation: fadeIn 0.8s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .slide-in-up { animation: slideInUp 0.6s ease-out; }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; height: 300px; max-height: 350px; }
+        @media (min-width: 640px) { .chart-container { height: 320px; } }
+        /* Microsoft Formsの埋め込み用スタイル */
+        .forms-container {
+            width: 100%;
+            height: 600px; /* フォームの高さに合わせて調整してください */
+            overflow: hidden; /* フォームがはみ出さないように */
+            border-radius: 0.75rem; /* Tailwindのrounded-xlに相当 */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* Tailwindのshadow-lgに相当 */
+        }
+        .forms-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-warm-white text-warm-gray">
+
+    <header class="bg-warm-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-supportive-blue">40代50代のキャリアチャンネル</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#challenge" class="nav-link border-b-2 border-transparent pb-1">人事の課題</a>
+                <a href="#solution" class="nav-link border-b-2 border-transparent pb-1">私達の解決策</a>
+                <a href="#results" class="nav-link border-b-2 border-transparent pb-1">実績データ</a>
+                <a href="#how-it-works" class="nav-link border-b-2 border-transparent pb-1">導入のご案内</a>
+            </div>
+            <a href="#contact" class="hidden md:inline-block bg-supportive-blue text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">お問い合わせ</a>
+            <button id="mobile-menu-button" class="md:hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4">
+            <a href="#challenge" class="block py-2">人事の課題</a>
+            <a href="#solution" class="block py-2">私達の解決策</a>
+            <a href="#results" class="block py-2">実績データ</a>
+            <a href="#how-it-works" class="block py-2">導入のご案内</a>
+            <a href="#contact" class="block mt-2 bg-supportive-blue text-white text-center font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">お問い合わせ</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="py-20 md:py-32 text-center fade-in">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-5xl font-bold text-warm-gray leading-tight">ミドルシニアの<span class="text-supportive-blue">キャリア自律</span>を、<br>企業成長の力に。</h2>
+                <p class="mt-6 text-lg md:text-xl max-w-3xl mx-auto">「40代50代のキャリアチャンネル」は、社員の皆様が自律的にキャリアを築くための「きっかけ」と「学びの場」を提供。エンゲージメントと組織全体の活力を向上させる、これからの時代の人事戦略です。</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-xl shadow-lg slide-in-up">
+                        <p class="text-4xl font-bold text-supportive-blue">69.4%</p>
+                        <p class="mt-2 font-semibold">がキャリア意識に変革を実感</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg slide-in-up" style="animation-delay: 0.2s;">
+                        <p class="text-4xl font-bold text-supportive-blue">53.0%</p>
+                        <p class="mt-2 font-semibold">が動画コンテンツを「役立つ」と評価</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg slide-in-up" style="animation-delay: 0.4s;">
+                        <p class="text-4xl font-bold text-supportive-blue">完全無償</p>
+                        <p class="mt-2 font-semibold">法人経由でのご利用</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="challenge" class="py-16 bg-warm-beige">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold">ミドルシニア人材に関する、こんな<span class="text-supportive-blue">課題</span>はありませんか？</h3>
+                    <p class="mt-4 text-lg max-w-2xl mx-auto">貴社の人事課題をクリックしてください。私たちのプラットフォームがどのように貢献できるかをご紹介します。</p>
+                </div>
+                <div id="challenge-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+                <div id="solution-display" class="mt-12 bg-white p-8 rounded-xl shadow-lg min-h-[150px] flex items-center justify-center transition-opacity duration-500 opacity-0">
+                    <p id="solution-text" class="text-center text-lg"></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="solution" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold">キャリア自律を促す<span class="text-supportive-blue">3つのフェーズ</span></h3>
+                    <p class="mt-4 text-lg max-w-2xl mx-auto">私たちは、ミドルシニアが自律的なキャリアを歩むためのプロセスを体系的にサポートします。</p>
+                </div>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-0">
+                    <div id="step-kikkake" class="process-step active text-center p-4 md:p-6 rounded-lg border-2 border-transparent w-full md:w-auto">
+                        <span class="text-2xl font-bold">① きっかけ</span>
+                        <p class="text-sm">キャリアを考える始点</p>
+                    </div>
+                    <div class="text-2xl text-supportive-blue mx-4 hidden md:block">→</div>
+                    <div class="text-2xl text-supportive-blue my-2 md:hidden">↓</div>
+                    <div id="step-aida" class="process-step text-center p-4 md:p-6 rounded-lg border-2 border-transparent w-full md:w-auto">
+                        <span class="text-2xl font-bold">② 間</span>
+                        <p class="text-sm">継続的な意識醸成</p>
+                    </div>
+                     <div class="text-2xl text-supportive-blue mx-4 hidden md:block">→</div>
+                    <div class="text-2xl text-supportive-blue my-2 md:hidden">↓</div>
+                    <div id="step-ketei" class="process-step text-center p-4 md:p-6 rounded-lg border-2 border-transparent w-full md:w-auto">
+                        <span class="text-2xl font-bold">③ 意思決定</span>
+                        <p class="text-sm">納得のいく選択へ</p>
+                    </div>
+                </div>
+                <div id="process-detail" class="mt-12 bg-warm-beige p-8 rounded-xl shadow-inner min-h-[200px] fade-in">
+                </div>
+            </div>
+        </section>
+
+        <section id="results" class="py-16 bg-warm-beige">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold">1年間の実証実験で得られた<span class="text-supportive-blue">確かな実績</span></h3>
+                    <p class="mt-4 text-lg max-w-2xl mx-auto">2,091名様のご利用データから、本サービスの有効性が証明されています。</p>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="w-full">
+                        <h4 class="text-xl font-bold text-center mb-4">登録者の内訳 (法人経由が多数)</h4>
+                        <div class="chart-container">
+                            <canvas id="registrantSourceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full">
+                        <h4 class="text-xl font-bold text-center mb-4">ウェビナー参加状況 (学びへの関心)</h4>
+                         <div class="chart-container">
+                            <canvas id="webinarAttendanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-12 bg-white p-8 rounded-xl shadow-lg text-center">
+                    <h4 class="text-2xl font-bold mb-4">ウェビナー参加者の<span class="text-supportive-blue">69.4%</span>が意識変革を実感</h4>
+                    <p class="max-w-3xl mx-auto text-lg">「なぜセカンドキャリアが重要か考えるきっかけになった」「今後の仕事への向き合い方がより有意義に思えた」など、多くのポジティブなフィードバックをいただいています。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold"><span class="text-supportive-blue">導入イメージ</span></h3>
+                    <!-- 以下の行を削除しました -->
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 text-center max-w-5xl mx-auto">
+                    <div class="p-6">
+                        <div class="flex items-center justify-center w-20 h-20 mx-auto bg-supportive-blue text-white rounded-full text-3xl font-bold">1</div>
+                        <h4 class="text-xl font-bold mt-6 mb-2">クーポンコードを発行</h4>
+                        <p>弊社から、貴社専用のクーポンコードを発行いたします</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center w-20 h-20 mx-auto bg-supportive-blue text-white rounded-full text-3xl font-bold">2</div>
+                        <h4 class="text-xl font-bold mt-6 mb-2">クーポンコードを展開</h4>
+                        <p>ご担当者様から、対象者へクーポンコードの展開をお願いいたします<br>必要な資料等、弊社からフォローいたします</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center w-20 h-20 mx-auto bg-supportive-blue text-white rounded-full text-3xl font-bold">3</div>
+                        <h4 class="text-xl font-bold mt-6 mb-2">ご自身で登録</h4>
+                        <p>対象者の皆様が、クーポンを利用して登録していただくと<br>その日からご利用いただけます</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-16 bg-warm-beige">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-bold">無料トライアルはこちらから</h3>
+                    <p class="mt-4 text-lg max-w-2xl mx-auto">人事ご担当者さま向けに、90日間の無料トライアルをご用意しました。<br>実際の導入前に、サービスの内容・効果・操作感をご確認いただけます。<br>ご検討中の企業さまも、まずはお気軽にお試しください。</p>
+                </div>
+                <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-lg forms-container">
+                    <!-- Microsoft Formsの埋め込みコード -->
+                    <iframe width="100%" height="100%" src="https://forms.office.com/Pages/ResponsePage.aspx?id=a_AHgdiTHkCty-DGqA_UsXblx2uo0p1LkayjHP3KmiZUNkRVWkhBTVlBTTdEVDkwSTJFNEpPMklTUSQlQCNjPTEkJUAjdD1n&embed=true" frameborder="0" marginwidth="0" marginheight="0" style="border: none; max-width:100%; max-height:100vh" allowfullscreen webkitallowfullscreen mozallowfullscreen msallowfullscreen> </iframe>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-warm-gray text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2024 40代50代のキャリアチャンネル. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    mobileMenu.classList.add('hidden');
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            const challengeData = [
+                { id: 'motivation', title: '役職定年後のモチベーション低下', icon: '📉', solution: '自身の市場価値を再認識し、新たな目標を設定するキャリアデザイン研修や、経験を活かせる副業・越境学習の機会を提供。エンゲージメントを再燃させます。' },
+                { id: 'skill', title: 'スキルの陳腐化・DX化への不安', icon: '💻', solution: '最新のDXトレンドやリスキリングに関する動画も掲載中。自分のペースで学び、時代に取り残されないスキルを習得できます。' }, /* 変更 */
+                { id: 'knowledge', title: 'ノウハウの属人化・技能継承の課題', icon: '🤝', solution: '自身の経験を棚卸し、言語化するワークショップを提供。若手への効果的な指導法も学べ、組織全体の知識資産向上に貢献します。' },
+                { id: 'loneliness', title: 'キャリアに関する孤独感・相談相手の不在', icon: '💬', solution: '同じ悩みを抱える同世代と繋がるオンラインコミュニティや、社外の専門家に相談できるキャリア面談機会を提供。一人で抱え込ませません。' },
+                { id: 'future', title: '漠然とした将来への経済的な不安', icon: '💰', solution: 'ライフプランニングや資産形成に関するセミナーを開催。キャリアだけでなく、人生100年時代を見据えた総合的な安心感を醸成します。' },
+                { id: 'path', title: '社内/社外でのキャリアパスが見えない', icon: '🗺️', solution: '多様なキャリアを歩む先輩の事例紹介や、社内外の様々な選択肢（転身、副業、独立）に関する情報を提供。視野を広げ、納得のいく意思決定を支援します。' }
+            ];
+
+            const challengeContainer = document.getElementById('challenge-container');
+            const solutionDisplay = document.getElementById('solution-display');
+            const solutionText = document.getElementById('solution-text');
+
+            challengeData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'challenge-card bg-white p-6 rounded-xl shadow-md cursor-pointer text-center';
+                card.innerHTML = `<div class="text-4xl mb-4">${item.icon}</div><h4 class="font-bold text-lg">${item.title}</h4>`;
+                card.addEventListener('click', () => {
+                    solutionText.textContent = item.solution;
+                    solutionDisplay.classList.remove('opacity-0');
+                    solutionDisplay.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                challengeContainer.appendChild(card);
+            });
+
+            const processDetails = {
+                kikkake: {
+                    title: '① きっかけ：キャリアを「自分事化」する始点',
+                    description: 'トップメッセージやキャリア研修、役職定年といった変化のタイミングを捉え、社員が自身のキャリアについて考え始めるための「動機」を提供します。本サイトでは、なぜ今キャリア自律が必要なのかを説く導入動画や、自己分析ツールを提供し、第一歩を力強く後押しします。'
+                },
+                aida: {
+                    title: '② 間：継続的な意識醸成と学びの場',
+                    description: 'キャリア自律は一朝一夕には実現しません。定期的に開催される多様なテーマのウェビナー、いつでも視聴可能なスキルアップ動画、同世代と交流できるコミュニティ機能などを通じて、継続的にキャリア意識を醸成し、必要な知識やスキルをインプットできる「伴走者」となります。'
+                },
+                ketei: {
+                    title: '③ 意思決定：納得できる未来を選ぶための情報提供',
+                    description: '社内での新たな役割、転職、独立、副業など、選択肢は様々です。それぞれのメリット・デメリットを解説した記事や、実際に多様なキャリアを歩む先輩たちのインタビュー動画を提供。情報格差をなくし、一人ひとりが納得感を持って自らの道を決定できるようサポートします。'
+                }
+            };
+            
+            const processDetailContainer = document.getElementById('process-detail');
+            const processSteps = document.querySelectorAll('.process-step');
+
+            function updateProcessDetail(stepId) {
+                const detail = processDetails[stepId.replace('step-', '')];
+                processDetailContainer.innerHTML = `
+                    <h4 class="text-xl font-bold mb-2 text-supportive-blue">${detail.title}</h4>
+                    <p class="text-md">${detail.description}</p>
+                `;
+                processDetailContainer.classList.remove('fade-in');
+                void processDetailContainer.offsetWidth;
+                processDetailContainer.classList.add('fade-in');
+
+                processSteps.forEach(step => {
+                    step.classList.remove('active');
+                });
+                document.getElementById(stepId).classList.add('active');
+            }
+
+            processSteps.forEach(step => {
+                step.addEventListener('click', () => updateProcessDetail(step.id));
+            });
+
+            updateProcessDetail('step-kikkake');
+
+            const registrantSourceCtx = document.getElementById('registrantSourceChart').getContext('2d');
+            new Chart(registrantSourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['法人経由', '個人申込'],
+                    datasets: [{
+                        data: [66.1, 33.9],
+                        backgroundColor: ['#5A7D9D', '#EAE7E1'], /* 変更 */
+                        borderColor: ['#F8F7F4', '#F8F7F4'],
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 14 }}},
+                        tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.raw + '%'; } } }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            const webinarAttendanceCtx = document.getElementById('webinarAttendanceChart').getContext('2d');
+            new Chart(webinarAttendanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1回参加', '2回参加', '3回以上参加'],
+                    datasets: [{
+                        label: '参加者割合',
+                        data: [67.4, 19.8, 12.8],
+                        backgroundColor: '#5A7D9D', /* 変更 */
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.raw + '%'; } } }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                             grid: { display: false },
+                             ticks: { callback: function(value) { return value + '%' }}
+                        },
+                         y: { grid: { display: false } }
+                    }
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
